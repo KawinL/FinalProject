@@ -38,6 +38,13 @@
 #define Right 2
 #define Up 3
 #define Down 4
+#define X_SIZE 24
+#define Y_SIZE 80
+#define Bar 1
+#define BarMoveLeft 1
+#define BarMoveRight 2
+#define BarStay 0
+#define BarL 15
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -60,8 +67,14 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+typedef struct{
+	uint8_t x,y,type,move;
+}moveable_obj;
+uint8_t map[X_SIZE][Y_SIZE+2];
+moveable_obj entityList[10];
+uint8_t n_obj =0;
 void go(uint8_t direction){
-	char data[5] ;
+	uint8_t data[5] ;
 	data[0] = 27;
 	data[1] = 91;
 	data[2] = 'A';
@@ -79,42 +92,77 @@ void go(uint8_t direction){
 		data[2] = 'B';
 		break;
 	}
-	HAL_UART_Transmit(&huart2,&data , 3, 1000);
-}
-void goUp()
-{
-	char data[5] ;
-	data[0] = 27;
-	data[1] = 91;
-	data[2] = 'A';
-	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+	HAL_UART_Transmit(&huart2,data , 3, 1000);
 }
 
-void goDown()
-{
-	char data[5] ;
-	data[0] = 27;
-	data[1] = 91;
-	data[2] = 'B';
-	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+
+
+void initMap(){
+	int i=0,j=0;
+	for(i=0;i<X_SIZE;i++){
+		for(j=0;j<Y_SIZE;j++){
+			map[i][j]=' ';
+		}
+		map[i][j]='\n';
+		map[i][j+1]='\r';
+	}
+	i = 21;
+	for(j=0;j<BarL;j++){
+		map[i][j]='=';
+	}
+	n_obj=1;
+	entityList[0].move=BarStay;
+	entityList[0].x=21;
+	entityList[0].y=0;
+	entityList[0].type = Bar;
 }
 
-void goLeft()
-{
-	char data[5] ;
-	data[0] = 27;
-	data[1] = 91;
-	data[2] = 'D';
-	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+void updateMap(){
+	int i;
+	for(i=0;i<n_obj;i++){
+		uint8_t type = entityList[i].type;
+		uint8_t* move = &entityList[i].move;
+		uint8_t* x = &entityList[i].x;
+		uint8_t* y = &entityList[i].y;
+		switch(type){
+		case Bar:
+			if(*move == BarMoveLeft){
+				if((*y)>0)
+				{
+					map[*x][(*y)+BarL-1]=' ';
+					(*y)--;
+					map[*x][*y]='=';
+				}
+				*move = BarStay;
+			}
+			else if(*move == BarMoveRight){
+				if((*y)+BarL-1<Y_SIZE)
+				{
+					map[*x][(*y)]=' ';
+					(*y)++;
+					map[*x][(*y)+BarL-1]='=';
+				}
+				*move = BarStay;
+			}
+			break;
+		}
+	}
 }
-void goRight()
-{
-	char data[5] ;
-	data[0] = 27;
-	data[1] = 91;
-	data[2] = 'C';
-	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+
+void updateDisplay(){
+	int i,j;
+	for(i=0;i<X_SIZE;i++){
+		go(Up);
+	}
+	for(i=0;i<Y_SIZE;i++){
+		go(Left);
+	}
+	for(i=0;i<X_SIZE;i++){
+		HAL_UART_Transmit(&huart2,map[i],Y_SIZE,10000);
+		if(i!=X_SIZE-1)HAL_UART_Transmit(&huart2,"\n\r",2,10000);
+	}
 }
+
 /* USER CODE END 0 */
 
 int main(void)
@@ -135,8 +183,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-
+  initMap();
   /* USER CODE BEGIN 2 */
+  uint8_t data;
 
   /* USER CODE END 2 */
 
@@ -145,7 +194,17 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
+	  if(HAL_UART_Receive(&huart2,&data,1,100)== HAL_OK){
+		  if(data == 'a'){
+			  entityList[0].move = BarMoveLeft;
+		  }
+		  else if(data == 'd'){
+			  entityList[0].move = BarMoveRight;
+		  }
+		  data = '\0';
+	  }
+	  updateMap();
+	  updateDisplay();
   /* USER CODE BEGIN 3 */
 
   }
