@@ -34,7 +34,10 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-
+#define Left 1
+#define Right 2
+#define Up 3
+#define Down 4
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -57,7 +60,61 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+void go(uint8_t direction){
+	char data[5] ;
+	data[0] = 27;
+	data[1] = 91;
+	data[2] = 'A';
+	switch(direction){
+	case Left:
+		data[2]='D';
+		break;
+	case Right :
+		data[2] = 'C';
+		break;
+	case Up:
+		data[2] = 'A';
+		break;
+	case Down:
+		data[2] = 'B';
+		break;
+	}
+	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+}
+void goUp()
+{
+	char data[5] ;
+	data[0] = 27;
+	data[1] = 91;
+	data[2] = 'A';
+	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+}
 
+void goDown()
+{
+	char data[5] ;
+	data[0] = 27;
+	data[1] = 91;
+	data[2] = 'B';
+	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+}
+
+void goLeft()
+{
+	char data[5] ;
+	data[0] = 27;
+	data[1] = 91;
+	data[2] = 'D';
+	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+}
+void goRight()
+{
+	char data[5] ;
+	data[0] = 27;
+	data[1] = 91;
+	data[2] = 'C';
+	HAL_UART_Transmit(&huart2,&data , 3, 1000);
+}
 /* USER CODE END 0 */
 
 int main(void)
